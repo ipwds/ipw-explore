@@ -12,6 +12,49 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import Image from 'next/image';
+// ---- Types ----
+type FormState = {
+  property: {
+    budget: string;
+    suburbs: string;
+    propertyTypes: string;
+    amysApartmentOption: boolean;
+    focusFamilyHome: boolean;
+    timeframe: string;
+  };
+  funding: {
+    savingsAud: string;
+    savingsOverseas: string;
+    inheritances: string;
+    mortgages: string;
+    shares: string;
+    otherLiquid: string;
+  };
+  incomeTax: {
+    employment: string;
+    salariesBenefits: string;
+    equity: string;
+    residency: string;
+    taxAdvice: string;
+  };
+  family: {
+    childrenPlan: string;
+    livingArrangements: string;
+    schoolingChildcare: string;
+  };
+  other: {
+    returnTimeline: string;
+    concerns: string[];
+    notes: string;
+    investmentVsPPR: string;
+  };
+  contact: {
+    fullName: string;
+    email: string;
+    phone: string;
+    consent: boolean;
+  };
+};
 
 // ---- Brand Palette ----
 const IPW = {
