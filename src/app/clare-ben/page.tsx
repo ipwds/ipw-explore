@@ -1,4 +1,15 @@
 'use client';
+
+/**
+ * Clare & Ben – Online Checklist & Fact Finder
+ * Brand: Integral Private Wealth (IPW)
+ * Styling: TailwindCSS (no import required)
+ * Usage:
+ *  1) Save as app/clare-ben/page.tsx
+ *  2) Place /public/ipw-logo.png
+ *  3) (Optional) Set NEXT_PUBLIC_WEBHOOK_URL for POSTed JSON submissions
+ */
+
 import React, { useMemo, useState, useEffect } from 'react';
 
 // ---- Brand Palette ----
@@ -38,9 +49,11 @@ const Label: React.FC<{ label: string; required?: boolean }> = ({ label, require
   </label>
 );
 
-const Input: React.FC<
-  React.InputHTMLAttributes<HTMLInputElement> & { label: string; required?: boolean }
-> = ({ label, required, ...props }) => (
+const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string; required?: boolean }> = ({
+  label,
+  required,
+  ...props
+}) => (
   <div className="flex flex-col">
     <Label label={label} required={required} />
     <input
@@ -72,6 +85,7 @@ const Toggle: React.FC<{ label: string; checked: boolean; onChange: (v: boolean)
       type="button"
       onClick={() => onChange(!checked)}
       className={`h-6 w-11 rounded-full transition-colors ${checked ? 'bg-[#003366]' : 'bg-slate-300'}`}
+      aria-pressed={checked}
     >
       <span
         className={`inline-block h-5 w-5 rounded-full bg-white transform transition-transform translate-y-[2px] ${
@@ -83,13 +97,33 @@ const Toggle: React.FC<{ label: string; checked: boolean; onChange: (v: boolean)
   </label>
 );
 
+// ---- Header ----
+const Header: React.FC = () => (
+  <header className="rounded-2xl p-6 shadow-md" style={{ backgroundColor: IPW.navy }}>
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-4">
+        <img src="/ipw-logo.png" alt="Integral Private Wealth" className="h-12 w-auto" />
+        <div>
+          <h1 className="text-white text-2xl font-semibold leading-tight">
+            Clare &amp; Ben – Online Checklist &amp; Fact Finder
+          </h1>
+          <p className="text-white/80 text-sm">Integral Private Wealth</p>
+        </div>
+      </div>
+      <div className="hidden md:block text-right">
+        <p className="text-white text-sm">Sydney | integralprivatewealth.com.au</p>
+      </div>
+    </div>
+  </header>
+);
+
 // ---- Main Component ----
 export default function ClareBenFactFinder() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form state
+  // Persist to localStorage for safety
   const [form, setForm] = useState<any>({
     property: {
       budget: '',
@@ -121,10 +155,9 @@ export default function ClareBenFactFinder() {
     },
     other: {
       returnTimeline: '',
-      concerns: [],
+      concerns: [] as string[],
       notes: '',
       investmentVsPPR: 'Principal residence only',
-      familyGiftingLoan: '', // NEW field
     },
     contact: {
       fullName: '',
@@ -134,13 +167,13 @@ export default function ClareBenFactFinder() {
     },
   });
 
-  // Load/save draft to localStorage
   useEffect(() => {
     try {
       const cached = localStorage.getItem('ipw_clareben_ff');
       if (cached) setForm(JSON.parse(cached));
     } catch {}
   }, []);
+
   useEffect(() => {
     try {
       localStorage.setItem('ipw_clareben_ff', JSON.stringify(form));
@@ -167,7 +200,9 @@ export default function ClareBenFactFinder() {
     'Financing while overseas',
   ];
 
-  const valid = useMemo(() => form.contact.fullName && form.contact.email && form.contact.consent, [form]);
+  const valid = useMemo(() => {
+    return form.contact.fullName && form.contact.email && form.contact.consent;
+  }, [form]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -175,15 +210,27 @@ export default function ClareBenFactFinder() {
     setError(null);
     try {
       const payload = {
-        meta: { createdAt: new Date().toISOString(), clientNames: 'Clare & Ben', source: 'IPW Online Fact Finder' },
+        meta: {
+          createdAt: new Date().toISOString(),
+          clientNames: 'Clare & Ben',
+          source: 'IPW Online Fact Finder',
+        },
         data: form,
       };
-      const webhook = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_WEBHOOK_URL || '' : '';
+
+      // Optional: forward to webhook if configured at build-time
+      const webhook =
+        typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_WEBHOOK_URL as string | undefined) || '' : '';
       if (webhook) {
-        await fetch(webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        await fetch(webhook, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
       }
+
       setSubmitted(true);
-    } catch {
+    } catch (err: any) {
       setError('Submission failed. Please try again or email us directly.');
     } finally {
       setSubmitting(false);
@@ -192,12 +239,15 @@ export default function ClareBenFactFinder() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen" style={{ background: `linear-gradient(135deg, ${IPW.beige4}, ${IPW.beige1})` }}>
+      <div
+        className="min-h-screen"
+        style={{ background: `linear-gradient(135deg, ${IPW.beige4}, ${IPW.beige1})` }}
+      >
         <div className="max-w-3xl mx-auto p-6">
           <Header />
           <div className="bg-white rounded-2xl shadow-lg p-8 mt-6">
             <h1 className="text-2xl font-semibold" style={{ color: IPW.navy }}>
-              Thank you, Clare & Ben
+              Thank you, Clare &amp; Ben
             </h1>
             <p className="mt-2" style={{ color: IPW.grey }}>
               Your checklist and fact finder have been submitted. We will review your information and prepare detailed
@@ -217,13 +267,12 @@ export default function ClareBenFactFinder() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: `linear-gradient(135deg, ${IPW.beige4}, ${IPW.beige1})` }}>
+    <div
+      className="min-h-screen"
+      style={{ background: `linear-gradient(135deg, ${IPW.beige4}, ${IPW.beige1})` }}
+    >
       <div className="max-w-5xl mx-auto p-6">
         <Header />
-        <p className="mt-6 text-sm" style={{ color: IPW.grey }}>
-          Ahead of our next meeting, please complete this checklist so we can model your objectives, funding position,
-          purchase strategy, and family planning in detail.
-        </p>
 
         <form onSubmit={onSubmit} className="mt-6">
           {/* 1. Property Objectives */}
@@ -232,7 +281,9 @@ export default function ClareBenFactFinder() {
               label="Preferred budget range (AUD)"
               placeholder="e.g., $1.6m – $2.2m"
               value={form.property.budget}
-              onChange={(e) => setForm({ ...form, property: { ...form.property, budget: (e.target as HTMLInputElement).value } })}
+              onChange={(e) =>
+                setForm({ ...form, property: { ...form.property, budget: (e.target as HTMLInputElement).value } })
+              }
             />
             <Input
               label="Desired purchase timeframe"
@@ -355,7 +406,10 @@ export default function ClareBenFactFinder() {
               label="RSUs, stock options or bonuses"
               value={form.incomeTax.equity}
               onChange={(e) =>
-                setForm({ ...form, incomeTax: { ...form.incomeTax, equity: (e.target as HTMLTextAreaElement).value } })
+                setForm({
+                  ...form,
+                  incomeTax: { ...form.incomeTax, equity: (e.target as HTMLTextAreaElement).value },
+                })
               }
             />
             <div className="flex flex-col">
@@ -376,7 +430,10 @@ export default function ClareBenFactFinder() {
               label="Any tax advice already received on a non-resident purchase"
               value={form.incomeTax.taxAdvice}
               onChange={(e) =>
-                setForm({ ...form, incomeTax: { ...form.incomeTax, taxAdvice: (e.target as HTMLTextAreaElement).value } })
+                setForm({
+                  ...form,
+                  incomeTax: { ...form.incomeTax, taxAdvice: (e.target as HTMLTextAreaElement).value },
+                })
               }
             />
           </Section>
@@ -450,7 +507,10 @@ export default function ClareBenFactFinder() {
               <select
                 value={form.other.investmentVsPPR}
                 onChange={(e) =>
-                  setForm({ ...form, other: { ...form.other, investmentVsPPR: (e.target as HTMLSelectElement).value } })
+                  setForm({
+                    ...form,
+                    other: { ...form.other, investmentVsPPR: (e.target as HTMLSelectElement).value },
+                  })
                 }
                 className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white"
               >
@@ -458,19 +518,6 @@ export default function ClareBenFactFinder() {
                 <option>Compare investment property and principal residence</option>
               </select>
             </div>
-
-            <TextArea
-              label="Any sensitivities about receiving money from parents/family (gifts or loans)?"
-              placeholder="e.g., prefer not to accept gifts, want clear loan terms, privacy concerns, etc."
-              value={form.other.familyGiftingLoan}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  other: { ...form.other, familyGiftingLoan: (e.target as HTMLTextAreaElement).value },
-                })
-              }
-            />
-
             <TextArea
               label="Anything else you would like us to consider"
               value={form.other.notes}
@@ -480,10 +527,57 @@ export default function ClareBenFactFinder() {
             />
           </Section>
 
-          {error && (
-            <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl p-3">
-              {error}
+          {/* Contact & Consent */}
+          <section className="bg-white rounded-2xl shadow-md p-6 mb-6 border border-slate-100">
+            <h2 className="text-xl font-semibold" style={{ color: IPW.navy }}>
+              Contact &amp; Consent
+            </h2>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Your full name"
+                required
+                placeholder="Clare Smith"
+                value={form.contact.fullName}
+                onChange={(e) =>
+                  setForm({ ...form, contact: { ...form.contact, fullName: (e.target as HTMLInputElement).value } })
+                }
+              />
+              <Input
+                label="Email"
+                required
+                type="email"
+                placeholder="clare@example.com"
+                value={form.contact.email}
+                onChange={(e) =>
+                  setForm({ ...form, contact: { ...form.contact, email: (e.target as HTMLInputElement).value } })
+                }
+              />
+              <Input
+                label="Contact number"
+                placeholder="+61 ..."
+                value={form.contact.phone}
+                onChange={(e) =>
+                  setForm({ ...form, contact: { ...form.contact, phone: (e.target as HTMLInputElement).value } })
+                }
+              />
+              <div className="flex items-center gap-3 mt-2">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={form.contact.consent}
+                  onChange={(e) =>
+                    setForm({ ...form, contact: { ...form.contact, consent: e.currentTarget.checked } })
+                  }
+                />
+                <span className="text-sm" style={{ color: IPW.grey }}>
+                  I consent to Integral Private Wealth using this information to prepare modelling and advice.
+                </span>
+              </div>
             </div>
+          </section>
+
+          {error && (
+            <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl p-3">{error}</div>
           )}
 
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -495,6 +589,7 @@ export default function ClareBenFactFinder() {
             >
               {submitting ? 'Submitting…' : 'Submit fact finder'}
             </button>
+
             <button
               type="button"
               onClick={() => {
@@ -512,31 +607,12 @@ export default function ClareBenFactFinder() {
           </div>
 
           <p className="text-xs mt-4" style={{ color: IPW.grey }}>
-            Your information is handled confidentially by Integral Private Wealth and used solely to prepare your advice.
-            This form does not constitute personal advice.
+            Your information is handled confidentially by Integral Private Wealth and used solely to prepare your
+            advice. This form does not constitute personal advice.
           </p>
         </form>
       </div>
     </div>
   );
 }
-
-const Header: React.FC = () => (
-  <header className="rounded-2xl p-6 shadow-md" style={{ backgroundColor: IPW.navy }}>
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-4">
-        <img src="/ipw-logo.png" alt="Integral Private Wealth" className="h-12 w-auto" />
-        <div>
-          <h1 className="text-white text-2xl font-semibold leading-tight">
-            Clare & Ben – Online Checklist & Fact Finder
-          </h1>
-          <p className="text-white/80 text-sm">Integral Private Wealth</p>
-        </div>
-      </div>
-      <div className="hidden md:block text-right">
-        <p className="text-white text-sm">Sydney | integralprivatewealth.com.au</p>
-      </div>
-    </div>
-  </header>
-);
 
