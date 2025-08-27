@@ -11,6 +11,7 @@
  */
 
 import React, { useMemo, useState, useEffect } from 'react';
+import Image from 'next/image';
 
 // ---- Brand Palette ----
 const IPW = {
@@ -102,7 +103,7 @@ const Header: React.FC = () => (
   <header className="rounded-2xl p-6 shadow-md" style={{ backgroundColor: IPW.navy }}>
     <div className="flex items-center justify-between gap-4">
       <div className="flex items-center gap-4">
-        <img src="/ipw-logo.png" alt="Integral Private Wealth" className="h-12 w-auto" />
+        <Image src="/ipw-logo.png" alt="Integral Private Wealth" width={160} height={48} />
         <div>
           <h1 className="text-white text-2xl font-semibold leading-tight">
             Clare &amp; Ben – Online Checklist &amp; Fact Finder
@@ -124,7 +125,7 @@ export default function ClareBenFactFinder() {
   const [error, setError] = useState<string | null>(null);
 
   // Persist to localStorage for safety
-  const [form, setForm] = useState<any>({
+  const [form, setForm] = useState<FormState>({
     property: {
       budget: '',
       suburbs: '',
@@ -181,7 +182,7 @@ export default function ClareBenFactFinder() {
   }, [form]);
 
   const handleConcerns = (value: string) => {
-    setForm((f: any) => {
+    setForm((f: FormState) => {
       const exists = f.other.concerns.includes(value);
       return {
         ...f,
@@ -230,7 +231,7 @@ export default function ClareBenFactFinder() {
       }
 
       setSubmitted(true);
-    } catch (err: any) {
+    } catch { {
       setError('Submission failed. Please try again or email us directly.');
     } finally {
       setSubmitting(false);
