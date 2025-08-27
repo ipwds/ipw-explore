@@ -231,7 +231,7 @@ export default function ClareBenFactFinder() {
       }
 
       setSubmitted(true);
-    } catch { {
+    } catch {
       setError('Submission failed. Please try again or email us directly.');
     } finally {
       setSubmitting(false);
